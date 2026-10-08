@@ -1,7 +1,8 @@
 package io.quarkus.jokes.runtime;
 
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
+import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,13 +18,13 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.assistant.runtime.dev.Assistant;
 import io.quarkus.runtime.annotations.JsonRpcDescription;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 import io.vertx.core.http.Cookie;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Provide Jokes for JSON-RPC Endpoint
@@ -141,7 +142,9 @@ public class JokesJsonRPCService {
 
     private Joke getRandomJoke() {
         try {
-            return mapper.readValue(new URL("https://official-joke-api.appspot.com/jokes/random/"), Joke.class);
+            try (InputStream in = URI.create("https://official-joke-api.appspot.com/jokes/random/").toURL().openStream()) {
+                return mapper.readValue(in, Joke.class);
+            }
         } catch (IOException ex) {
             // joke service not availalbe. Fallback to hardcoded
             return backupJoke;
@@ -150,7 +153,9 @@ public class JokesJsonRPCService {
 
     private User getRandomUser() {
         try {
-            return mapper.readValue(new URL("https://randomuser.me/api"), Results.class).results[0];
+            try (InputStream in = URI.create("https://randomuser.me/api").toURL().openStream()) {
+                return mapper.readValue(in, Results.class).results[0];
+            }
         } catch (IOException ex) {
             // user service not availalbe. Fallback to hardcoded
             return backupUser;

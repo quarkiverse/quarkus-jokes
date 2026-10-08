@@ -1,7 +1,8 @@
 package io.quarkus.jokes.deployment;
 
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -11,12 +12,12 @@ import java.util.Random;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.jokes.runtime.Joke;
 import io.quarkus.jokes.runtime.User;
+import tools.jackson.databind.ObjectMapper;
 
 class JokesProcessor {
     private static final String FEATURE = "jokes";
@@ -62,7 +63,9 @@ class JokesProcessor {
 
     private Joke[] getTenJokes() {
         try {
-            return mapper.readValue(new URL("https://official-joke-api.appspot.com/jokes/ten"), Joke[].class);
+            try (InputStream in = URI.create("https://official-joke-api.appspot.com/jokes/ten").toURL().openStream()) {
+                return mapper.readValue(in, Joke[].class);
+            }
         } catch (IOException ex) {
             log.warn(ex);
             Joke joke = new Joke();
@@ -74,7 +77,9 @@ class JokesProcessor {
 
     private User[] getTenUsers() {
         try {
-            return mapper.readValue(new URL("https://randomuser.me/api?results=10"), Results.class).results;
+            try (InputStream in = URI.create("https://randomuser.me/api?results=10").toURL().openStream()) {
+                return mapper.readValue(in, Results.class).results;
+            }
         } catch (IOException ex) {
             log.warn(ex);
 
